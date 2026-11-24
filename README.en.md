@@ -15,7 +15,7 @@ python repo_check.py owner/repo
 
 **It is** a single Python script with no extra packages. It asks GitHub for information about the project and searches the source code for typical traits of malware. It never runs anything from the checked project.
 
-**It is not** a virus scanner, a guarantee, or a substitute for caution. Well-hidden malware can pass every check. And many harmless small projects get yellow, for example because their downloads are not digitally signed.
+**It is not** a virus scanner, a guarantee, or a substitute for caution. The check mostly judges the packaging: the account, the project's age, the download metadata, and the readable source code. It never opens the finished program file you would actually run. Someone who uses an older account and hides the malware only in that file can get green.
 
 ## Quickstart
 
@@ -31,6 +31,8 @@ python repo_check.py owner/repo
    ```
 
    If Windows opens the Microsoft Store instead or says Python was not found, use `py` instead of `python`.
+
+A check usually takes 20 to 30 seconds, up to two minutes for very large projects.
 
 ### macOS and Linux
 
@@ -57,18 +59,50 @@ python3 repo_check.py owner/repo
 | Light | Meaning |
 |---|---|
 | 🟢 **green** | No warning signs found. Not proof that the program is harmless. |
-| 🟡 **yellow** | Something is unusual or missing, for example no checksums for the downloads. Read the reasons and decide. |
+| 🟡 **yellow** | There are warning signs, for example a brand-new project with a suspicious number of stars, or a lure topic such as "crack" on a project nobody uses. Read the reasons and decide. |
 | 🔴 **red** | Clear warning signs, for example an account imitating a well-known project, or malware reports. Do not download until this is resolved. |
-| ⚪ **unknown** | The check could not be completed, for example because the repository does not exist or GitHub was unreachable. |
+| ⚪ **unknown** | The check could not be completed: the repository does not exist, GitHub was unreachable, the request limit was hit, or the project could not be scanned completely. The report names the reason and what to do. |
 
 Below the light you get:
 
 - **Reasons:** what led to the rating.
 - **Capabilities:** what the program can do according to its source code, similar to app permissions on a phone (for example "starts automatically with Windows" or "reads browser data"). This is not an accusation. The question is whether it fits the program's purpose.
-- **Caveats:** short sentences you can pass on, for example "Not signed; Windows will warn on first start".
+- **Trust signals:** what speaks for the project, for example an attested automated build. They never offset a warning sign.
+- **Caveats:** short sentences you can pass on, for example "The project is only 17 days old".
 - **Not checked:** what was skipped or did not work.
 
-<!-- EXAMPLE-OUTPUT: filled in after the engine is final -->
+```text
+repo-check 1.0.0 · yt-dlp/yt-dlp · 2026-11-24 20:17
+stars 210,417 · forks 18,628 · contributors 301+ · license Unlicense · created 2020-10-26
+
+🟢 GREEN: no warning signs found
+8 checks found only minor points, nothing that adds up to a warning. That is not a guarantee: see the limits.
+
+Warning signs
+  🔸 Connects directly to a public IP address instead of a domain name.
+     Sometimes harmless, sometimes a hidden server. Found in 2 places.
+     › yt_dlp/extractor/presstv.py:34
+
+What the program can do
+  • Reads saved browser data, passwords, wallets or login tokens. Fine when it is the tool's job
+    (e.g. a downloader using your cookies), but know that it can.
+
+Trust signals
+  ✓ Established project: 6 years old, 301+ contributors.
+  ✓ The release is immutable: its files can't be swapped afterwards.
+  ✓ Build provenance is attested for 4 file(s).
+  ✓ All files were uploaded by GitHub Actions (automated build).
+  […]
+
+Worth saying out loud
+  • It can read browser cookies or saved logins; that's part of how it works, but you should know.
+
+Limits
+  This checks the repository and its release metadata. It does not prove what a downloaded file does on your computer.
+  Green means no warning signs were found, not that the project is safe. New or well-hidden malware can pass.
+```
+
+The example is shortened. The full report also has notes, skipped checks, VirusTotal links and issues to read.
 
 For scripts: the exit code (the number a program returns when it ends) is `0` green, `10` yellow, `20` red, `30` unknown, `1` internal error, `2` usage error.
 
@@ -137,11 +171,12 @@ npx skills add Hamido212/repo-check -g -a opencode
 
 ## What is checked
 
-- **Origin:** account age, fork (copy of another project), renamed project, imitation of a better-known project.
+- **Origin:** age of the account and the project, fork (copy of another project), renamed project, imitation of a better-known project.
+- **Lures:** topics such as cracks, cheats or "premium for free", password-protected archives, download buttons that lead away from GitHub.
 - **Stars:** do the stars match real usage (forks, issues, contributions)? Bought stars are a known trick.
-- **Releases** (published downloads): checksums (a kind of fingerprint of a file), signatures, build provenance attestations, and who uploaded the files.
+- **Releases** (published downloads): checksums (a kind of fingerprint of a file), signatures, build provenance attestations, who uploaded the files, and whether a file was replaced afterwards.
 - **VirusTotal** (optional): looks up the file fingerprints in known results.
-- **Source code:** searches for typical malware patterns, such as hidden code or access to passwords.
+- **Source code:** searches for typical malware patterns, such as hidden or encrypted code, access to passwords combined with a channel to the outside, invisible characters, and text meant to steer AI assistants.
 - **Issues:** reports by other users about viruses or malware.
 - **OpenSSF Scorecard** and **Trivy** (optional): public security rating and vulnerability scan.
 
@@ -149,7 +184,7 @@ The full list of individual checks is in [docs/CHECKS.md](docs/CHECKS.md).
 
 ## Optional: GitHub token, VirusTotal, Trivy
 
-**GitHub token.** Without signing in, GitHub allows only a few requests per hour. If the [GitHub CLI](https://cli.github.com) is installed and you signed in with `gh auth login`, repo-check uses it automatically. Otherwise you can put a token (a password just for programs) in `GITHUB_TOKEN`. For public repositories it needs no permissions.
+**GitHub token.** Without signing in, GitHub allows only a few requests per hour. That is enough for about six checks per hour. If the [GitHub CLI](https://cli.github.com) is installed and you signed in with `gh auth login`, repo-check uses it automatically. Otherwise you can put a token (a password just for programs) in `GITHUB_TOKEN`. For public repositories it needs no permissions.
 
 **VirusTotal.** Create a free account on [virustotal.com](https://www.virustotal.com) and copy the API key from your profile. Then:
 
@@ -166,11 +201,11 @@ Other environment variables: `REPO_CHECK_LANG` (default language), `NO_COLOR` (n
 
 What leaves your computer:
 
-- **Requests to the GitHub API** about the repository you name (project data, releases, issues, source code). With a token, GitHub sees which account is asking.
-- **VirusTotal:** only if `VT_API_KEY` is set, and only the checksums (fingerprints) of the release files. No files are uploaded.
-- **OpenSSF Scorecard:** one lookup of the public rating for the repository, unless you pass `--no-scorecard`.
+- **Requests to GitHub** (`api.github.com`, and `codeload.github.com` for the source code) about the repository you name: project data, account, releases, issues, source code. Plus one search for projects with a similar name, to detect copies. With a token, GitHub sees which account is asking.
+- **VirusTotal** (`www.virustotal.com`): only if `VT_API_KEY` is set, and only the checksums (fingerprints) of at most three release files. No files are uploaded.
+- **OpenSSF Scorecard** (`api.securityscorecards.dev`): one lookup of the public rating for the repository, unless you pass `--no-scorecard`.
 
-Nothing else: no analytics, no account, no server of ours. Trivy runs locally, but it downloads its own vulnerability database.
+Nothing else: no analytics, no account, no server of ours. Trivy runs locally, but it fetches the repository and its vulnerability database itself. If no token is set, repo-check asks the GitHub CLI on your machine for your login (`gh auth token`); the token is sent only to `api.github.com`.
 
 ## FAQ
 
@@ -178,7 +213,7 @@ Nothing else: no analytics, no account, no server of ours. Trivy runs locally, b
 Green means "no warning signs found". The check sees the repository and the download metadata, not what a program does on your computer. Run unknown Windows programs in an isolated environment such as [Windows Sandbox](https://learn.microsoft.com/windows/security/application-security/application-isolation/windows-sandbox/) first (Windows Pro and up, not Windows Home).
 
 **Why does a well-known tool get yellow?**
-Many small open-source projects do not sign their downloads or publish checksums. That is not evidence of malware, but it makes it harder to verify that a file is genuine.
+Yellow does not mean "malware", it means "read the reasons". Typical cases for legitimate projects: the project is only a few weeks old; the source tree contains a finished program file nobody can verify; or a few antivirus engines on VirusTotal flag an unsigned file, which is often a false alarm but cannot be settled from the outside.
 
 **Does it run anything from the checked project?**
 No. repo-check only reads. It never downloads programs to start them.

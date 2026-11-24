@@ -15,7 +15,7 @@ python repo_check.py owner/repo
 
 **Es ist** ein einzelnes Python-Skript ohne Zusatzpakete. Es fragt GitHub nach Informationen zum Projekt und durchsucht den Quellcode nach typischen Merkmalen von Schadsoftware. Es führt nie etwas aus dem geprüften Projekt aus.
 
-**Es ist kein** Virenscanner, keine Garantie und kein Ersatz für Vorsicht. Ein geschickt verstecktes Schadprogramm kann alle Prüfungen bestehen. Umgekehrt bekommen viele harmlose kleine Projekte Gelb, weil ihnen zum Beispiel eine digitale Signatur fehlt.
+**Es ist kein** Virenscanner, keine Garantie und kein Ersatz für Vorsicht. Der Check beurteilt vor allem das Drumherum: das Konto, das Alter des Projekts, die Angaben zu den Downloads und den lesbaren Quellcode. Die fertige Programmdatei, die du am Ende startest, öffnet er nie. Wer ein älteres Konto benutzt und die Schadsoftware nur in dieser Datei versteckt, kann Grün bekommen.
 
 ## Schnellstart
 
@@ -31,6 +31,8 @@ python repo_check.py owner/repo
    ```
 
    Falls Windows stattdessen den Microsoft Store öffnet oder „Python wurde nicht gefunden“ meldet, nimm `py` statt `python`.
+
+Ein Check dauert meist 20 bis 30 Sekunden, bei sehr großen Projekten bis zu zwei Minuten.
 
 ### macOS und Linux
 
@@ -57,18 +59,50 @@ python3 repo_check.py owner/repo
 | Ampel | Bedeutung |
 |---|---|
 | 🟢 **grün** | Keine Warnzeichen gefunden. Kein Beweis, dass das Programm harmlos ist. |
-| 🟡 **gelb** | Etwas ist ungewöhnlich oder fehlt, zum Beispiel keine Prüfsummen für die Downloads. Lies die Gründe und entscheide selbst. |
+| 🟡 **gelb** | Es gibt Warnzeichen, zum Beispiel ein brandneues Projekt mit auffällig vielen Sternen oder ein Köder-Thema wie „Crack“ bei einem Projekt ohne Nutzer. Lies die Gründe und entscheide selbst. |
 | 🔴 **rot** | Deutliche Warnzeichen, zum Beispiel ein Konto, das sich als bekanntes Projekt ausgibt, oder Malware-Meldungen. Nicht herunterladen, bevor das geklärt ist. |
-| ⚪ **unbekannt** | Die Prüfung konnte nicht abgeschlossen werden, etwa weil das Repository nicht existiert oder GitHub nicht erreichbar war. |
+| ⚪ **unbekannt** | Die Prüfung konnte nicht abgeschlossen werden: Das Repository existiert nicht, GitHub war nicht erreichbar, das Anfragelimit ist erreicht, oder das Projekt ließ sich nicht vollständig durchsuchen. Der Bericht nennt den Grund und was du tun kannst. |
 
 Unter der Ampel stehen:
 
 - **Gründe:** was zur Einstufung geführt hat.
 - **Fähigkeiten:** was das Programm laut Quellcode tun kann, ähnlich wie App-Berechtigungen auf dem Handy (zum Beispiel „startet automatisch mit Windows“ oder „liest Browserdaten“). Das ist kein Vorwurf. Die Frage ist, ob es zum Zweck des Programms passt.
-- **Hinweise:** kurze Sätze, die du weitergeben kannst, zum Beispiel „Nicht signiert, Windows warnt beim Start“.
+- **Vertrauenssignale:** was für das Projekt spricht, zum Beispiel ein belegter automatischer Build. Sie gleichen nie ein Warnzeichen aus.
+- **Hinweise:** kurze Sätze, die du weitergeben kannst, zum Beispiel „Das Projekt ist erst 17 Tage alt“.
 - **Nicht geprüft:** was ausgelassen wurde oder nicht ging.
 
-<!-- EXAMPLE-OUTPUT: filled in after the engine is final -->
+```text
+repo-check 1.0.0 · yt-dlp/yt-dlp · 2026-11-24 20:17
+Sterne 210.417 · Forks 18.628 · Mitwirkende 301+ · Lizenz Unlicense · erstellt 26.10.2020
+
+🟢 GRÜN: keine Warnzeichen gefunden
+8 Prüfungen haben nur Kleinigkeiten gefunden, nichts, was eine Warnung ergibt. Das ist keine Garantie: siehe Grenzen.
+
+Warnzeichen
+  🔸 Verbindet sich direkt mit einer öffentlichen IP-Adresse statt einem Domainnamen.
+     Manchmal harmlos, manchmal ein versteckter Server. An 2 Stellen gefunden.
+     › yt_dlp/extractor/presstv.py:34
+
+Was das Programm kann
+  • Liest gespeicherte Browser-Daten, Passwörter, Wallets oder Login-Tokens. In Ordnung, wenn das
+    die Aufgabe ist (z. B. ein Downloader mit deinen Cookies), aber du solltest es wissen.
+
+Vertrauenssignale
+  ✓ Etabliertes Projekt: 6 Jahre alt, 301+ Mitwirkende.
+  ✓ Das Release ist unveränderlich: Die Dateien lassen sich nachträglich nicht austauschen.
+  ✓ Die Build-Herkunft ist für 4 Datei(en) belegt (Attestation).
+  ✓ Alle Dateien hat GitHub Actions hochgeladen (automatischer Build).
+  […]
+
+Das solltest du dazusagen
+  • Es kann Browser-Cookies oder gespeicherte Logins lesen; das gehört zur Funktion, du solltest es aber wissen.
+
+Grenzen
+  Geprüft werden das Repo und die Release-Angaben. Was eine heruntergeladene Datei auf deinem Rechner tut, beweist das nicht.
+  Grün heißt: keine Warnzeichen gefunden, nicht: sicher. Neue oder gut versteckte Schadsoftware kann durchrutschen.
+```
+
+Das Beispiel ist gekürzt. Der volle Bericht enthält außerdem Hinweise, übersprungene Prüfungen, VirusTotal-Links und Issues zum Nachlesen.
 
 Für eigene Skripte: Der Exit-Code (die Zahl, die ein Programm beim Beenden zurückgibt) ist `0` grün, `10` gelb, `20` rot, `30` unbekannt, `1` interner Fehler, `2` falscher Aufruf.
 
@@ -137,11 +171,12 @@ npx skills add Hamido212/repo-check -g -a opencode
 
 ## Was geprüft wird
 
-- **Herkunft:** Alter des Kontos, Fork (Kopie eines anderen Projekts), umbenanntes Projekt, Nachahmung eines bekannteren Projekts.
+- **Herkunft:** Alter des Kontos und des Projekts, Fork (Kopie eines anderen Projekts), umbenanntes Projekt, Nachahmung eines bekannteren Projekts.
+- **Köder:** Themen wie Cracks, Cheats oder „Premium gratis“, passwortgeschützte Archive, Download-Knöpfe, die von GitHub wegführen.
 - **Sterne:** Passen die Sterne zur echten Nutzung (Forks, Issues, Beiträge)? Gekaufte Sterne sind ein bekannter Trick.
-- **Releases** (veröffentlichte Downloads): Prüfsummen (eine Art Fingerabdruck einer Datei), Signaturen, Herkunftsnachweise des Builds (build provenance) und wer die Dateien hochgeladen hat.
+- **Releases** (veröffentlichte Downloads): Prüfsummen (eine Art Fingerabdruck einer Datei), Signaturen, Herkunftsnachweise des Builds (build provenance), wer die Dateien hochgeladen hat und ob eine Datei nachträglich ausgetauscht wurde.
 - **VirusTotal** (optional): Abgleich der Datei-Fingerabdrücke mit bekannten Ergebnissen.
-- **Quellcode:** Suche nach typischen Mustern von Schadsoftware, etwa versteckter Code oder Zugriff auf Passwörter.
+- **Quellcode:** Suche nach typischen Mustern von Schadsoftware, etwa versteckter oder verschlüsselter Code, Zugriff auf Passwörter zusammen mit einem Kanal nach außen, unsichtbare Zeichen und Text, der KI-Assistenten beeinflussen soll.
 - **Issues:** Meldungen anderer Nutzer zu Viren oder Malware.
 - **OpenSSF Scorecard** und **Trivy** (optional): öffentliche Sicherheitsbewertung und Schwachstellen-Scan.
 
@@ -149,7 +184,7 @@ Die vollständige Liste aller Einzelprüfungen steht in [docs/CHECKS.md](docs/CH
 
 ## Optional: GitHub-Token, VirusTotal, Trivy
 
-**GitHub-Token.** Ohne Anmeldung erlaubt GitHub nur wenige Anfragen pro Stunde. Wenn du die [GitHub CLI](https://cli.github.com) installiert und mit `gh auth login` angemeldet bist, nutzt repo-check das automatisch. Sonst kannst du einen Token (eine Art Passwort nur für Programme) in `GITHUB_TOKEN` hinterlegen. Für öffentliche Repositories braucht er keine Berechtigungen.
+**GitHub-Token.** Ohne Anmeldung erlaubt GitHub nur wenige Anfragen pro Stunde. Das reicht für etwa sechs Checks pro Stunde. Wenn du die [GitHub CLI](https://cli.github.com) installiert und mit `gh auth login` angemeldet bist, nutzt repo-check das automatisch. Sonst kannst du einen Token (eine Art Passwort nur für Programme) in `GITHUB_TOKEN` hinterlegen. Für öffentliche Repositories braucht er keine Berechtigungen.
 
 **VirusTotal.** Leg ein kostenloses Konto auf [virustotal.com](https://www.virustotal.com) an und kopier den API-Schlüssel aus deinem Profil. Dann:
 
@@ -166,11 +201,11 @@ Weitere Umgebungsvariablen: `REPO_CHECK_LANG` (Standardsprache), `NO_COLOR` (kei
 
 Was deinen Rechner verlässt:
 
-- **Anfragen an die GitHub-API** zum Repository, das du nennst (Projektdaten, Releases, Issues, Quellcode). Mit Token sieht GitHub, welches Konto fragt.
-- **VirusTotal:** nur wenn `VT_API_KEY` gesetzt ist, und nur die Prüfsummen (Fingerabdrücke) der Release-Dateien. Es werden keine Dateien hochgeladen.
-- **OpenSSF Scorecard:** eine Abfrage der öffentlichen Bewertung für das Repository, außer mit `--no-scorecard`.
+- **Anfragen an GitHub** (`api.github.com`, für den Quellcode `codeload.github.com`) zum Repository, das du nennst: Projektdaten, Konto, Releases, Issues, Quellcode. Dazu eine Suche nach Projekten mit ähnlichem Namen, um Kopien zu erkennen. Mit Token sieht GitHub, welches Konto fragt.
+- **VirusTotal** (`www.virustotal.com`): nur wenn `VT_API_KEY` gesetzt ist, und nur die Prüfsummen (Fingerabdrücke) von höchstens drei Release-Dateien. Es werden keine Dateien hochgeladen.
+- **OpenSSF Scorecard** (`api.securityscorecards.dev`): eine Abfrage der öffentlichen Bewertung für das Repository, außer mit `--no-scorecard`.
 
-Sonst nichts: keine Statistik, kein Konto, kein Server von uns. Trivy läuft lokal; es lädt aber selbst seine Schwachstellen-Datenbank herunter.
+Sonst nichts: keine Statistik, kein Konto, kein Server von uns. Trivy läuft lokal; es holt sich aber selbst das Repository und seine Schwachstellen-Datenbank. Ist kein Token hinterlegt, fragt repo-check lokal die GitHub CLI nach deinem Login (`gh auth token`); der Token geht nur an `api.github.com`.
 
 ## Häufige Fragen
 
@@ -178,7 +213,7 @@ Sonst nichts: keine Statistik, kein Konto, kein Server von uns. Trivy läuft lok
 Grün heißt „keine Warnzeichen gefunden“. Der Check sieht das Repository und die Angaben zu den Downloads, nicht das, was ein Programm auf deinem Rechner tut. Starte unbekannte Windows-Programme zuerst in einer abgeschotteten Umgebung wie der [Windows-Sandbox](https://learn.microsoft.com/windows/security/application-security/application-isolation/windows-sandbox/) (ab Windows Pro, nicht in Windows Home).
 
 **Warum bekommt ein bekanntes Tool Gelb?**
-Viele kleine Open-Source-Projekte signieren ihre Downloads nicht und veröffentlichen keine Prüfsummen. Das ist kein Beweis für Schadsoftware, macht es aber schwerer nachzuprüfen, dass die Datei echt ist.
+Gelb heißt nicht „Schadsoftware“, sondern „lies die Gründe“. Typische Fälle bei seriösen Projekten: Das Projekt ist erst wenige Wochen alt. Im Quellcode liegt eine fertige Programmdatei, die niemand nachprüfen kann. Oder einige Virenscanner bei VirusTotal schlagen bei einer unsignierten Datei an, was oft ein Fehlalarm ist, sich von außen aber nicht entscheiden lässt.
 
 **Wird etwas aus dem geprüften Projekt ausgeführt?**
 Nein. repo-check liest nur. Es lädt keine Programme herunter, um sie zu starten.
