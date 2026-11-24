@@ -218,6 +218,12 @@ Gelb heißt nicht „Schadsoftware“, sondern „lies die Gründe“. Typische 
 **Wird etwas aus dem geprüften Projekt ausgeführt?**
 Nein. repo-check liest nur. Es lädt keine Programme herunter, um sie zu starten.
 
+**Warum untersucht repo-check die fertige Programmdatei nicht selbst?**
+Um zu beurteilen, was eine .exe tut, muss man sie zerlegen oder in einer abgeschotteten Umgebung laufen lassen. Das ist die Arbeit von Virenscannern. Ein Skript, das nur in die Datei hineinschaut, würde eine Sicherheit vortäuschen, die es nicht liefern kann. repo-check nimmt deshalb den Fingerabdruck (SHA-256), den GitHub zur Download-Datei angibt, und fragt bei VirusTotal nach, was die Virenscanner dort zu genau dieser Datei sagen. Dafür brauchst du einen VirusTotal-Schlüssel. Ohne Schlüssel, oder wenn VirusTotal die Datei noch nicht kennt, steht das im Bericht, zusammen mit einem Link zum Selbernachsehen. Bei älteren Releases fehlt der Fingerabdruck auf GitHub manchmal; dann ist keine Abfrage möglich. Trivy ist kein Virenscanner: Es sucht im Quellcode nach bekannten Sicherheitslücken in verwendeten Bibliotheken und nach versehentlich veröffentlichten Zugangsdaten.
+
+**Was kommt heraus, wenn repo-check sich selbst prüft?**
+Stand Version 1.0.0: Grün. Solange das Projekt neu ist, steht dabei, dass es erst wenige Tage oder Wochen alt ist. Dazu kommen zwei Hinweise aus dem eigenen Material: In den Tests stehen Beispiele für Schadcode-Muster, und der Prompt für Chat-Assistenten zitiert typische Manipulationssätze, um vor ihnen zu warnen. Die Mustersuche erkennt beides und zeigt es als Hinweis, nicht als Warnzeichen. Probier es aus: `python repo_check.py Hamido212/repo-check`.
+
 **Geht das auch mit GitLab oder anderen Seiten?**
 Nein, nur GitHub.
 

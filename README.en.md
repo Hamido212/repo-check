@@ -218,6 +218,12 @@ Yellow does not mean "malware", it means "read the reasons". Typical cases for l
 **Does it run anything from the checked project?**
 No. repo-check only reads. It never downloads programs to start them.
 
+**Why doesn't repo-check examine the finished program file itself?**
+Judging what an .exe does means taking it apart or running it in an isolated environment. That is the job of antivirus engines. A script that merely peeks into the file would suggest a certainty it cannot deliver. So repo-check takes the fingerprint (SHA-256) that GitHub publishes for the download file and asks VirusTotal what the antivirus engines there say about exactly that file. This needs a VirusTotal key. Without a key, or if VirusTotal does not know the file yet, the report says so and gives you a link to look for yourself. Older releases sometimes have no fingerprint on GitHub; then no lookup is possible. Trivy is not an antivirus: it searches the source code for known vulnerabilities in the libraries used and for accidentally published credentials.
+
+**What happens when repo-check checks itself?**
+As of version 1.0.0: green. While the project is new, the report also says that it is only a few days or weeks old. On top of that come two notes caused by its own material: the tests contain examples of malicious code patterns, and the prompt for chat assistants quotes typical manipulation phrases in order to warn about them. The pattern search finds both and lists them as notes, not as warning signs. Try it: `python repo_check.py Hamido212/repo-check`.
+
 **Does it work with GitLab or other sites?**
 No, GitHub only.
 
