@@ -1,0 +1,19 @@
+{
+  "name": "hyos",
+  "description": "repo-check: pre-download security check for GitHub repositories",
+  "owner": {
+    "name": "Hamid Yosefsei (HYOS)",
+    "url": "https://github.com/Hamido212"
+  },
+  "plugins": [
+    {
+      "name": "repo-check",
+      "source": "./",
+      "description": "Checks a GitHub repository before you download from it: origin, stars, release integrity, malware traits, issue reports. Green means no warning signs found, not safe.",
+      "license": "MIT",
+      "homepage": "https://github.com/Hamido212/repo-check",
+      "repository": "https://github.com/Hamido212/repo-check",
+      "keywords": ["security", "github", "supply-chain", "malware"]
+    }
+  ]
+}
